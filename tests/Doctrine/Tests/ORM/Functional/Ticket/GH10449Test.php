@@ -8,35 +8,22 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Tests\OrmTestCase;
-
-use function get_parent_class;
-use function method_exists;
+use Doctrine\Tests\PHPUnitCompatibility\ExceptionMatching;
 
 class GH10449Test extends OrmTestCase
 {
+    use ExceptionMatching;
+
     public function testToManyAssociationOnMappedSuperclassShallBeRejected(): void
     {
-        $em      = $this->getTestEntityManager();
-        $classes = [GH10449MappedSuperclass::class, GH10449Entity::class, GH10449ToManyAssociationTarget::class];
+        $em = $this->getTestEntityManager();
 
         $this->expectException(MappingException::class);
         $this->expectExceptionMessageMatches('/illegal to put an inverse side one-to-many or many-to-many association on mapped superclass/');
 
-        foreach ($classes as $class) {
-            $cm = $em->getClassMetadata($class);
-        }
-    }
-
-    /**
-     * Override for BC with PHPUnit <8
-     */
-    public function expectExceptionMessageMatches(string $regularExpression): void
-    {
-        if (method_exists(get_parent_class($this), 'expectExceptionMessageMatches')) {
-            parent::expectExceptionMessageMatches($regularExpression);
-        } else {
-            parent::expectExceptionMessageRegExp($regularExpression);
-        }
+        // Currently the ClassMetadataFactory performs the check only when loading the subclasses, this might change with
+        // https://github.com/doctrine/orm/pull/10398
+        $em->getClassMetadata(GH10449Entity::class);
     }
 }
 

@@ -34,6 +34,7 @@ use function is_numeric;
 class AnnotationDriver extends CompatibilityAnnotationDriver
 {
     use ColocatedMappingDriver;
+    use ReflectionBasedDriver;
 
     /**
      * The annotation reader.
@@ -344,37 +345,7 @@ class AnnotationDriver extends CompatibilityAnnotationDriver
 
         // Evaluate annotations on properties/fields
         foreach ($class->getProperties() as $property) {
-            // Handle the case that reflection may report properties inherited from parent classes.
-            // When we know about the fields already (inheritance has been anticipanted in ClassMetadataFactory),
-            // skip them.
-            // The declaring classes may mismatch when there are private properties: The same property name may be
-            // reported multiple times, but since it is private, it is in fact multiple (different) properties in
-            // different classes. In that case, report the property as an individual field. (ClassMetadataFactory will
-            // probably fail in that case, though.)
-
-            $declaringClass = $property->getDeclaringClass()->getName();
-
-            if (
-                isset($metadata->fieldMappings[$property->name])
-                && isset($metadata->fieldMappings[$property->name]['declared'])
-                && $metadata->fieldMappings[$property->name]['declared'] === $declaringClass
-            ) {
-                continue;
-            }
-
-            if (
-                isset($metadata->associationMappings[$property->name])
-                && isset($metadata->associationMappings[$property->name]['declared'])
-                && $metadata->associationMappings[$property->name]['declared'] === $declaringClass
-            ) {
-                continue;
-            }
-
-            if (
-                isset($metadata->embeddedClasses[$property->name])
-                && isset($metadata->embeddedClasses[$property->name]['declared'])
-                && $metadata->embeddedClasses[$property->name]['declared'] === $declaringClass
-            ) {
+            if ($this->isRepeatedPropertyDeclaration($property, $metadata)) {
                 continue;
             }
 

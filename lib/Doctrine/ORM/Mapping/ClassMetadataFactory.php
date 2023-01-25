@@ -138,7 +138,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             throw MappingException::reflectionFailure($class->getName(), $e);
         }
 
-        $this->completeIdGeneratorMapping($class);
+        // Complete id generator mapping when the generator was declared/added in this class
+        if ($class->identifier && (! $parent || ! $parent->identifier)) {
+            $this->completeIdGeneratorMapping($class);
+        }
 
         if (! $class->isMappedSuperclass) {
             if ($rootEntityFound && $class->isInheritanceTypeNone()) {

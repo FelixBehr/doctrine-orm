@@ -7,10 +7,13 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Tests\OrmTestCase;
+use Doctrine\Tests\PHPUnitCompatibility\ExceptionMatching;
 use Generator;
 
 class GH10454Test extends OrmTestCase
 {
+    use ExceptionMatching;
+
     /**
      * @param class-string $className
      *
@@ -30,18 +33,6 @@ class GH10454Test extends OrmTestCase
     {
         yield 'Entity class that redeclares a protected field inherited from a base entity' => [GH10454EntityChildProtected::class];
         yield 'Entity class that redeclares a protected field inherited from a mapped superclass' => [GH10454MappedSuperclassChildProtected::class];
-    }
-
-    /**
-     * Override for BC with PHPUnit <8
-     */
-    public function expectExceptionMessageMatches(string $regularExpression): void
-    {
-        if (method_exists(get_parent_class($this), 'expectExceptionMessageMatches')) {
-            parent::expectExceptionMessageMatches($regularExpression);
-        } else {
-            parent::expectExceptionMessageRegExp($regularExpression);
-        }
     }
 }
 

@@ -30,6 +30,7 @@ use const PHP_VERSION_ID;
 class AttributeDriver extends CompatibilityAnnotationDriver
 {
     use ColocatedMappingDriver;
+    use ReflectionBasedDriver;
 
     private const ENTITY_ATTRIBUTE_CLASSES = [
         Mapping\Entity::class => 1,
@@ -294,15 +295,8 @@ class AttributeDriver extends CompatibilityAnnotationDriver
 
         foreach ($reflectionClass->getProperties() as $property) {
             assert($property instanceof ReflectionProperty);
-            if (
-                $metadata->isMappedSuperclass && ! $property->isPrivate()
-                ||
-                $metadata->isInheritedField($property->name)
-                ||
-                $metadata->isInheritedAssociation($property->name)
-                ||
-                $metadata->isInheritedEmbeddedClass($property->name)
-            ) {
+
+            if ($this->isRepeatedPropertyDeclaration($property, $metadata)) {
                 continue;
             }
 
