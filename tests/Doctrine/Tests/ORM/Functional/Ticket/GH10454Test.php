@@ -7,13 +7,10 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Tests\OrmTestCase;
-use Doctrine\Tests\PHPUnitCompatibility\ExceptionMatching;
 use Generator;
 
 class GH10454Test extends OrmTestCase
 {
-    use ExceptionMatching;
-
     /**
      * @param class-string $className
      *

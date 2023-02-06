@@ -8,12 +8,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Tests\OrmTestCase;
-use Doctrine\Tests\PHPUnitCompatibility\ExceptionMatching;
 
 class GH10449Test extends OrmTestCase
 {
-    use ExceptionMatching;
-
     public function testToManyAssociationOnMappedSuperclassShallBeRejected(): void
     {
         $em = $this->getTestEntityManager();
