@@ -1,5 +1,18 @@
 # Upgrade to 2.15
 
+## Changing the way how reflection-based mapping drivers report fields, deprecated the "old" mode
+
+In ORM 3.0, a change will be made how the `AttributeDriver` reports field mappings.
+This change is necessary to be able to detect (and reject) some invalid mapping configurations.
+
+To avoid surprises during 2.x upgrades, the new mode is opt-in. It can be activated on the 
+`AttributesDriver` and `AnnotationsDriver` by setting the `$reportFieldsWhereDeclared`
+constructor parameter to `true`. It will cause `MappingException`s to be thrown when invalid
+configurations are detected.
+
+Not enabling the new mode will cause a deprecation notice to be raised. In ORM 3.0, 
+only the new mode will be available.
+
 ## Deprecated overriding fields or associations not declared in mapped superclasses
 
 As stated in the documentation, fields and associations may only be overridden when being inherited
