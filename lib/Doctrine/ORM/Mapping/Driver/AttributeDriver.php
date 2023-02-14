@@ -54,7 +54,7 @@ class AttributeDriver extends CompatibilityAnnotationDriver
     protected $reader;
 
     /** @param array<string> $paths */
-    public function __construct(array $paths)
+    public function __construct(array $paths, bool $reportFieldsWhereDeclared = false)
     {
         if (PHP_VERSION_ID < 80000) {
             throw new LogicException(sprintf(
@@ -74,6 +74,17 @@ class AttributeDriver extends CompatibilityAnnotationDriver
                 self::class
             );
         }
+
+        if (! $reportFieldsWhereDeclared) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/pull/10455',
+                'In ORM 3.0, the AttributeDriver will report fields for the classes where they are declared. This may uncover invalid mapping configurations. To opt into the new mode today, set the "reportFieldsWhereDeclared" constructor parameter to true.',
+                self::class
+            );
+        }
+
+        $this->reportFieldsWhereDeclared = $reportFieldsWhereDeclared;
     }
 
     /**

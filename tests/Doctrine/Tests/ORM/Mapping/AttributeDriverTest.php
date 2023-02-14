@@ -31,7 +31,7 @@ class AttributeDriverTest extends MappingDriverTestCase
     {
         $paths = [];
 
-        return new AttributeDriver($paths);
+        return new AttributeDriver($paths, true);
     }
 
     public function testNamedQuery(): void
