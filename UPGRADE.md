@@ -6,7 +6,7 @@ In ORM 3.0, a change will be made regarding how the `AttributeDriver` reports fi
 This change is necessary to be able to detect (and reject) some invalid mapping configurations.
 
 To avoid surprises during 2.x upgrades, the new mode is opt-in. It can be activated on the 
-`AttributesDriver` and `AnnotationsDriver` by setting the `$reportFieldsWhereDeclared`
+`AttributeDriver` and `AnnotationDriver` by setting the `$reportFieldsWhereDeclared`
 constructor parameter to `true`. It will cause `MappingException`s to be thrown when invalid
 configurations are detected.
 
