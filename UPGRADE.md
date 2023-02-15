@@ -2,7 +2,7 @@
 
 ## Changing the way how reflection-based mapping drivers report fields, deprecated the "old" mode
 
-In ORM 3.0, a change will be made how the `AttributeDriver` reports field mappings.
+In ORM 3.0, a change will be made regarding how the `AttributeDriver` reports field mappings.
 This change is necessary to be able to detect (and reject) some invalid mapping configurations.
 
 To avoid surprises during 2.x upgrades, the new mode is opt-in. It can be activated on the 
