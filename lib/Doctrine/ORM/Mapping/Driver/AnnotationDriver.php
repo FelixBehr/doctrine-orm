@@ -76,7 +76,7 @@ class AnnotationDriver extends CompatibilityAnnotationDriver
             Deprecation::trigger(
                 'doctrine/orm',
                 'https://github.com/doctrine/orm/pull/10455',
-                'In ORM 3.0, the AttributeDriver will report fields for the classes where they are declared. This may uncover invalid mapping configurations. To opt into the new mode also with the AnnotationsDriver today, set the "reportFieldsWhereDeclared" constructor parameter to true.',
+                'In ORM 3.0, the AttributeDriver will report fields for the classes where they are declared. This may uncover invalid mapping configurations. To opt into the new mode also with the AnnotationDriver today, set the "reportFieldsWhereDeclared" constructor parameter to true.',
                 self::class
             );
         }
