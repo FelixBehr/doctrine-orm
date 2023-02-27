@@ -1121,8 +1121,6 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function executeInserts(array $entities): void
     {
-        $invokeListenersForEntities = [];
-
         foreach ($entities as $oid => $entity) {
             $class     = $this->em->getClassMetadata(get_class($entity));
             $persister = $this->getEntityPersister($class->name);
@@ -1131,10 +1129,6 @@ class UnitOfWork implements PropertyChangedListener
             $persister->addInsert($entity);
 
             unset($this->entityInsertions[$oid]);
-
-            if ($invoke !== ListenersInvoker::INVOKE_NONE) {
-                $invokeListenersForEntities[] = $entity;
-            }
 
             $postInsertIds = $persister->executeInserts();
 
@@ -1162,10 +1156,10 @@ class UnitOfWork implements PropertyChangedListener
                     $this->addToEntityIdentifiersAndEntityMap($class, $oid, $entity);
                 }
             }
-        }
 
-        foreach ($invokeListenersForEntities as $entity) {
-            $this->listenersInvoker->invoke($class, Events::postPersist, $entity, new PostPersistEventArgs($entity, $this->em), $invoke);
+            if ($invoke !== ListenersInvoker::INVOKE_NONE) {
+                $this->listenersInvoker->invoke($class, Events::postPersist, $entity, new PostPersistEventArgs($entity, $this->em), $invoke);
+            }
         }
     }
 
