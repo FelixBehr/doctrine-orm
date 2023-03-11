@@ -2546,16 +2546,9 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Gets the CommitOrderCalculator used by the UnitOfWork to order commits.
      *
-     * @deprecated use createCommitOrderCalculator() instead
-     *
      * @return CommitOrderCalculator
      */
     public function getCommitOrderCalculator()
-    {
-        return $this->createCommitOrderCalculator();
-    }
-
-    public function createCommitOrderCalculator(): CommitOrderCalculator
     {
         return new Internal\CommitOrderCalculator();
     }

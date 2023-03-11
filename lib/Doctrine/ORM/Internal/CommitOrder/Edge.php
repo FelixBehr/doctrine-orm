@@ -8,27 +8,27 @@ namespace Doctrine\ORM\Internal\CommitOrder;
 final class Edge
 {
     /**
-     * @var int
+     * @var string
      * @readonly
      */
     public $from;
 
     /**
-     * @var int
+     * @var string
      * @readonly
      */
     public $to;
 
     /**
-     * @var bool
+     * @var int
      * @readonly
      */
-    public $optional;
+    public $weight;
 
-    public function __construct(int $from, int $to, bool $optional)
+    public function __construct(string $from, string $to, int $weight)
     {
-        $this->from     = $from;
-        $this->to       = $to;
-        $this->optional = $optional;
+        $this->from   = $from;
+        $this->to     = $to;
+        $this->weight = $weight;
     }
 }

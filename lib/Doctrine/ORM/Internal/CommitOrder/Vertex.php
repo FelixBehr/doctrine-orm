@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Internal\CommitOrder;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /** @internal */
 final class Vertex
 {
     /**
-     * @var int
+     * @var string
      * @readonly
      */
     public $hash;
@@ -20,16 +22,15 @@ final class Vertex
     public $state = VertexState::NOT_VISITED;
 
     /**
-     * @var object
+     * @var ClassMetadata
      * @readonly
      */
     public $value;
 
-    /** @var array<int, Edge> */
+    /** @var array<string, Edge> */
     public $dependencyList = [];
 
-    /** @param object $value */
-    public function __construct(int $hash, $value)
+    public function __construct(string $hash, ClassMetadata $value)
     {
         $this->hash  = $hash;
         $this->value = $value;

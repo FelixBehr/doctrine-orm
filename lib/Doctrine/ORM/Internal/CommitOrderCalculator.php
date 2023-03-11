@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Internal;
 
-use Doctrine\ORM\Internal\CommitOrder\CycleDetectedException;
 use Doctrine\ORM\Internal\CommitOrder\Edge;
 use Doctrine\ORM\Internal\CommitOrder\Vertex;
 use Doctrine\ORM\Internal\CommitOrder\VertexState;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 use function array_reverse;
 
@@ -34,21 +34,25 @@ class CommitOrderCalculator
      *
      * Keys are provided hashes and values are the node definition objects.
      *
-     * @var array<int, Vertex>
+     * @var array<string, Vertex>
      */
     private $nodeList = [];
 
     /**
      * Volatile variable holding calculated nodes during sorting process.
      *
-     * @psalm-var array<int, object>
+     * @psalm-var list<ClassMetadata>
      */
     private $sortedNodeList = [];
 
     /**
      * Checks for node (vertex) existence in graph.
+     *
+     * @param string $hash
+     *
+     * @return bool
      */
-    public function hasNode(int $hash): bool
+    public function hasNode($hash)
     {
         return isset($this->nodeList[$hash]);
     }
@@ -56,39 +60,55 @@ class CommitOrderCalculator
     /**
      * Adds a new node (vertex) to the graph, assigning its hash and value.
      *
-     * @param object $node
+     * @param string        $hash
+     * @param ClassMetadata $node
+     *
+     * @return void
      */
-    public function addNode(int $hash, $node): void
+    public function addNode($hash, $node)
     {
         $this->nodeList[$hash] = new Vertex($hash, $node);
     }
 
     /**
      * Adds a new dependency (edge) to the graph using their hashes.
+     *
+     * @param string $fromHash
+     * @param string $toHash
+     * @param int    $weight
+     *
+     * @return void
      */
-    public function addDependency(int $fromHash, int $toHash, bool $optional): void
+    public function addDependency($fromHash, $toHash, $weight)
     {
         $this->nodeList[$fromHash]->dependencyList[$toHash]
-            = new Edge($fromHash, $toHash, $optional);
+            = new Edge($fromHash, $toHash, $weight);
     }
 
     /**
-     * Returns a topological sort of all nodes. When we have a dependency A->B between two nodes
-     * A and B, then A will be listed before B in the result.
+     * Return a valid order list of all current nodes.
+     * The desired topological sorting is the reverse post order of these searches.
      *
      * {@internal Highly performance-sensitive method.}
      *
-     * @psalm-return array<int, object>
+     * @psalm-return list<ClassMetadata>
      */
     public function sort()
     {
-        foreach (array_reverse($this->nodeList) as $vertex) {
-            if ($vertex->state === VertexState::NOT_VISITED) {
-                $this->visit($vertex);
+        foreach ($this->nodeList as $vertex) {
+            if ($vertex->state !== VertexState::NOT_VISITED) {
+                continue;
             }
+
+            $this->visit($vertex);
         }
 
-        return array_reverse($this->sortedNodeList, true);
+        $sortedList = $this->sortedNodeList;
+
+        $this->nodeList       = [];
+        $this->sortedNodeList = [];
+
+        return array_reverse($sortedList);
     }
 
     /**
@@ -98,45 +118,47 @@ class CommitOrderCalculator
      */
     private function visit(Vertex $vertex): void
     {
-        if ($vertex->state === VertexState::IN_PROGRESS) {
-            // This node is already on the current DFS stack. We've found a cycle!
-            throw new CycleDetectedException();
-        }
-
-        if ($vertex->state === VertexState::VISITED) {
-            // We've reached a node that we've already seen, including all
-            // other nodes that are reachable from here. We're done here, return.
-            return;
-        }
-
         $vertex->state = VertexState::IN_PROGRESS;
 
-        // Continue the DFS downwards the edge list
         foreach ($vertex->dependencyList as $edge) {
             $adjacentVertex = $this->nodeList[$edge->to];
 
-            try {
-                $this->visit($adjacentVertex);
-            } catch (CycleDetectedException $exception) {
-                if ($edge->optional) {
-                    // A cycle was found, and $edge is the closest edge while backtracking.
-                    // Skip this edge, continue with the next one.
-                    continue;
-                }
+            switch ($adjacentVertex->state) {
+                case VertexState::VISITED:
+                    // Do nothing, since node was already visited
+                    break;
 
-                // We have found a cycle and cannot break it at $edge. Best we can do
-                // is to retreat from the current vertex, hoping that somewhere up the
-                // stack this can be salvaged.
-                $vertex->state = VertexState::NOT_VISITED;
+                case VertexState::IN_PROGRESS:
+                    if (
+                        isset($adjacentVertex->dependencyList[$vertex->hash]) &&
+                        $adjacentVertex->dependencyList[$vertex->hash]->weight < $edge->weight
+                    ) {
+                        // If we have some non-visited dependencies in the in-progress dependency, we
+                        // need to visit them before adding the node.
+                        foreach ($adjacentVertex->dependencyList as $adjacentEdge) {
+                            $adjacentEdgeVertex = $this->nodeList[$adjacentEdge->to];
 
-                throw $exception;
+                            if ($adjacentEdgeVertex->state === VertexState::NOT_VISITED) {
+                                $this->visit($adjacentEdgeVertex);
+                            }
+                        }
+
+                        $adjacentVertex->state = VertexState::VISITED;
+
+                        $this->sortedNodeList[] = $adjacentVertex->value;
+                    }
+
+                    break;
+
+                case VertexState::NOT_VISITED:
+                    $this->visit($adjacentVertex);
             }
         }
 
-        // We have traversed all edges and visited all other nodes reachable from here.
-        // So we're done with this vertex as well.
+        if ($vertex->state !== VertexState::VISITED) {
+            $vertex->state = VertexState::VISITED;
 
-        $vertex->state                       = VertexState::VISITED;
-        $this->sortedNodeList[$vertex->hash] = $vertex->value;
+            $this->sortedNodeList[] = $vertex->value;
+        }
     }
 }
