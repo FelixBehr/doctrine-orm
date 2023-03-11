@@ -6,16 +6,14 @@ namespace Doctrine\ORM\Internal\TopologicalSort;
 
 use RuntimeException;
 
+use function array_unshift;
+
 class CycleDetectedException extends RuntimeException
 {
-    /**
-     * @var list<object>
-     */
+    /** @var list<object> */
     private $cycle;
 
-    /**
-     * @var object
-     */
+    /** @var object */
     private $startNode;
 
     /**
@@ -25,27 +23,22 @@ class CycleDetectedException extends RuntimeException
      */
     private $cycleCollected = false;
 
-    /**
-     * @param object $startNode
-     */
+    /** @param object $startNode */
     public function __construct($startNode)
     {
         parent::__construct('A cycle has been detected, so a topological sort is not possible. The getCycle() method provides the list of nodes that form the cycle.');
+
         $this->startNode = $startNode;
-        $this->cycle = [$startNode];
+        $this->cycle     = [$startNode];
     }
 
-    /**
-     * @return list<object>
-     */
+    /** @return list<object> */
     public function getCycle(): array
     {
         return $this->cycle;
     }
 
-    /**
-     * @param object $node
-     */
+    /** @param object $node */
     public function addToCycle($node): void
     {
         array_unshift($this->cycle, $node);

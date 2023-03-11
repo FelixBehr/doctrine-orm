@@ -23,8 +23,8 @@ final class GH10348Test extends OrmFunctionalTestCase
 
     public function testCanRemoveParentWithChildRelatesToOwnEntity(): void
     {
-        $child1 = new GH10348ChildEntity();
-        $child2 = new GH10348ChildEntity();
+        $child1         = new GH10348ChildEntity();
+        $child2         = new GH10348ChildEntity();
         $child2->origin = $child1;
 
         $parent = new GH10348ParentEntity();
@@ -32,7 +32,7 @@ final class GH10348Test extends OrmFunctionalTestCase
 
         $this->_em->persist($parent);
         $this->_em->flush();
-    
+
         $parent = $this->_em->find(GH10348ParentEntity::class, $parent->id);
 
         $this->_em->remove($parent);
@@ -107,4 +107,3 @@ class GH10348ParentEntity
         return $this;
     }
 }
-

@@ -7,7 +7,9 @@ namespace Doctrine\Tests\ORM;
 use Doctrine\ORM\Internal\TopologicalSort;
 use Doctrine\ORM\Internal\TopologicalSort\CycleDetectedException;
 use Doctrine\Tests\OrmTestCase;
+
 use function array_map;
+use function array_search;
 use function array_values;
 
 class TopologicalSortTest extends OrmTestCase
@@ -212,7 +214,7 @@ class TopologicalSortTest extends OrmTestCase
     private function addNodes(string ...$names): void
     {
         foreach ($names as $name) {
-            $node = new Node($name);
+            $node               = new Node($name);
             $this->nodes[$name] = $node;
             $this->topologicalSort->addNode($node);
         }

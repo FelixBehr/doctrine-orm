@@ -28,6 +28,7 @@ use Doctrine\ORM\Exception\UnexpectedAssociationValue;
 use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Internal\CommitOrderCalculator;
 use Doctrine\ORM\Internal\HydrationCompleteHandler;
+use Doctrine\ORM\Internal\TopologicalSort;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\Reflection\ReflectionPropertiesGetter;
@@ -1117,11 +1118,12 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Executes entity insertions in the given order
      *
-     * @param array<int, object> $entities
+     * @param list<object> $entities
      */
     private function executeInserts(array $entities): void
     {
-        foreach ($entities as $oid => $entity) {
+        foreach ($entities as $entity) {
+            $oid       = spl_object_id($entity);
             $class     = $this->em->getClassMetadata(get_class($entity));
             $persister = $this->getEntityPersister($class->name);
             $invoke    = $this->listenersInvoker->getSubscribedSystems($class, Events::postPersist);
@@ -1228,11 +1230,12 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Executes all entity deletions
      *
-     * @param array<int, object> $entities
+     * @param list<object> $entities
      */
     private function executeDeletions(array $entities): void
     {
-        foreach ($entities as $oid => $entity) {
+        foreach ($entities as $entity) {
+            $oid       = spl_object_id($entity);
             $class     = $this->em->getClassMetadata(get_class($entity));
             $persister = $this->getEntityPersister($class->name);
             $invoke    = $this->listenersInvoker->getSubscribedSystems($class, Events::postRemove);
@@ -1259,32 +1262,34 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /** @return array<int, object> */
+    /** @return list<object> */
     private function computeInsertExecutionOrder(): array
     {
         return $this->computeAssociationTopoSort($this->entityInsertions);
     }
 
-    /** @return array<int, object> */
+    /** @return list<object> */
     private function computeDeleteExecutionOrder(): array
     {
-        return array_reverse($this->computeAssociationTopoSort($this->entityDeletions), true);
+        return array_reverse($this->computeAssociationTopoSort($this->entityDeletions));
     }
 
     /**
-     * @param array<int, object> $objects
+     * @param array<object> $entities
      *
-     * @return array<int, object>
+     * @return list<object>
      */
-    private function computeAssociationTopoSort(array $objects): array
+    private function computeAssociationTopoSort(array $entities): array
     {
-        $calc = $this->createCommitOrderCalculator();
+        $sort = new TopologicalSort();
 
-        foreach ($objects as $oid => $entity) {
-            $calc->addNode($oid, $entity);
+        // First make sure we have all the nodes
+        foreach ($entities as $entity) {
+            $sort->addNode($entity);
         }
 
-        foreach ($objects as $oid => $entity) {
+        // Now add edges
+        foreach ($entities as $entity) {
             $class = $this->em->getClassMetadata(get_class($entity));
 
             foreach ($class->associationMappings as $assoc) {
@@ -1294,13 +1299,9 @@ class UnitOfWork implements PropertyChangedListener
 
                 $targetEntity = $class->getFieldValue($entity, $assoc['fieldName']);
 
-                if ($targetEntity === null) {
+                if ($targetEntity === null || ! $sort->hasNode($targetEntity)) {
                     continue;
                 }
-
-                $targetOid = spl_object_id($targetEntity);
-
-                $joinColumns = reset($assoc['joinColumns']);
 
                 // According to https://www.doctrine-project.org/projects/doctrine-orm/en/2.14/reference/annotations-reference.html#annref_joincolumn,
                 // the default for "nullable" is true. Unfortunately, it seems this default is not applied at the metadata driver, factory or other
@@ -1311,15 +1312,14 @@ class UnitOfWork implements PropertyChangedListener
                 //
                 // Same in \Doctrine\ORM\Tools\EntityGenerator::isAssociationIsNullable or \Doctrine\ORM\Persisters\Entity\BasicEntityPersister::getJoinSQLForJoinColumns,
                 // to give two examples.
-                $isNullable = !isset($joinColumns['nullable']) || $joinColumns['nullable'];
+                $joinColumns = reset($assoc['joinColumns']);
+                $isNullable  = ! isset($joinColumns['nullable']) || $joinColumns['nullable'];
 
-                if (isset($objects[$targetOid])) {
-                    $calc->addDependency($targetOid, $oid, $isNullable);
-                }
+                $sort->addEdge($targetEntity, $entity, $isNullable);
             }
         }
 
-        return $calc->sort();
+        return $sort->sort();
     }
 
     /**

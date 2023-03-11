@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Internal;
 
 use Doctrine\ORM\Internal\TopologicalSort\CycleDetectedException;
+
+use function array_keys;
 use function array_reverse;
+use function array_unshift;
+use function spl_object_id;
 
 /**
  * TopologicalSort implements topological sorting, which is an ordering
@@ -18,7 +22,7 @@ class TopologicalSort
 {
     private const NOT_VISITED = 1;
     private const IN_PROGRESS = 2;
-    private const VISITED = 3;
+    private const VISITED     = 3;
 
     /**
      * Array of all nodes, indexed by object ids.
@@ -27,14 +31,10 @@ class TopologicalSort
      */
     private $nodes = [];
 
-    /**
-     * @var array<int, int>
-     */
+    /** @var array<int, int> */
     private $states = [];
 
-    /**
-     * @var array<int, array<int, bool>>
-     */
+    /** @var array<int, array<int, bool>> */
     private $edges = [];
 
     /**
@@ -44,15 +44,19 @@ class TopologicalSort
      */
     private $sortResult = [];
 
-    /**
-     * @param object $node
-     */
+    /** @param object $node */
     public function addNode($node): void
     {
-        $id = spl_object_id($node);
-        $this->nodes[$id] = $node;
+        $id                = spl_object_id($node);
+        $this->nodes[$id]  = $node;
         $this->states[$id] = self::NOT_VISITED;
-        $this->edges[$id] = [];
+        $this->edges[$id]  = [];
+    }
+
+    /** @param object $node */
+    public function hasNode($node): bool
+    {
+        return isset($this->nodes[spl_object_id($node)]);
     }
 
     /**
@@ -64,7 +68,7 @@ class TopologicalSort
     public function addEdge($from, $to, bool $optional): void
     {
         $fromId = spl_object_id($from);
-        $toId = spl_object_id($to);
+        $toId   = spl_object_id($to);
 
         if (isset($this->edges[$fromId][$toId]) && $this->edges[$fromId][$toId] === false) {
             return; // we already know about this dependency, and it is not optional
