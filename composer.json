@@ -1,5 +1,5 @@
 {
-    "name": "FelixBehr/doctrine-orm",
+    "name": "felixbehr/doctrine-orm",
     "replace": {
         "doctrine/orm": "2.14.1"
     },
