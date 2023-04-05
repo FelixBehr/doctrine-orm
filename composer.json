@@ -1,5 +1,8 @@
 {
-    "name": "doctrine/orm",
+    "name": "FelixBehr/doctrine-orm",
+    "replace": {
+        "doctrine/orm": "2.14.1"
+    },
     "type": "library",
     "description": "Object-Relational-Mapper for PHP",
     "keywords": ["orm", "database"],
